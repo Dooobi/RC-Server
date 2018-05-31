@@ -1,32 +1,29 @@
 var Gpio = require('pigpio').Gpio;
 
-module.exports = function(options) {
-	
-	this.gpioNumber = options.gpio;
-	this.inputRange = options.inputRange;
-	this.outputRange = options.outputRange;
-	this.defaultPulseWidth = options.defaultPulseWidth || (this.inputRange.max - this.inputRange.min)/2 + this.inputRange.min;
-	this.mirror = options.mirror || false;
-	
-	this.currentPulseWidth = this.defaultPulseWidth;
-	this.actualOutputRange = {
-		min: this.mirror ? this.outputRange.max : this.outputRange.min,
-		max: this.mirror ? this.outputRange.min : this.outputRange.max
-	};
-	this.servo = new Gpio(this.gpioNumber, {mode: Gpio.OUTPUT});
-	this.calibrating = false;
-	
-	this.init = function() {
+module.exports = class Servo {
+	constructor(config) {
+		this.gpioNumber = config.gpio;
+		this.inputRange = config.inputRange;
+		this.outputRange = config.outputRange;
+		this.defaultPulseWidth = config.defaultPulseWidth || (this.inputRange.max - this.inputRange.min)/2 + this.inputRange.min;
+		this.mirror = config.mirror || false;
+		this.currentPulseWidth = this.defaultPulseWidth;
+		this.actualOutputRange = {
+			min: this.mirror ? this.outputRange.max : this.outputRange.min,
+			max: this.mirror ? this.outputRange.min : this.outputRange.max
+		};
+		this.servo = new Gpio(this.gpioNumber, {mode: Gpio.OUTPUT});
+		this.calibrating = false;
+	}
+	init() {
 		this.servo.servoWrite(this.defaultPulseWidth);
 		this.currentPulseWidth = this.defaultPulseWidth;
-	};
-	
-	this.update = function(input) {
+	}
+	update(input) {
 		this.currentPulseWidth = Math.round(map(input, this.inputRange.min, this.inputRange.max, this.actualOutputRange.min, this.actualOutputRange.max));
 		console.log(`Math.round(map(${input}, ${this.inputRange.min}, ${this.inputRange.max}, ${this.actualOutputRange.min}, ${this.actualOutputRange.max})) = ${this.currentPulseWidth}`);
 		this.servo.servoWrite(this.currentPulseWidth);
-	};
-	
+	}
 };
 
 // linearly maps value from the range (a..b) to (c..d)
